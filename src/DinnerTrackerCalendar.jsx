@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Utensils, Calendar } from 'lucide-react';
 
 const DinnerTrackerCalendar = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [dinnerDays, setDinnerDays] = useState(new Set());
+
+  // ✅ Load dinner days from localStorage
+  const [dinnerDays, setDinnerDays] = useState(() => {
+    const saved = localStorage.getItem("dinnerDays");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [dayToRemove, setDayToRemove] = useState(null);
 
@@ -23,17 +29,12 @@ const DinnerTrackerCalendar = () => {
     const startingDayOfWeek = firstDay.getDay();
 
     const days = [];
-    
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-    
-    // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(day);
     }
-    
     return days;
   };
 
@@ -43,19 +44,17 @@ const DinnerTrackerCalendar = () => {
 
   const toggleDinner = (day) => {
     if (!day) return;
-    
+
     const dateKey = formatDateKey(
       currentMonth.getFullYear(),
       currentMonth.getMonth() + 1,
       day
     );
-    
-    // If dinner is already marked, show confirmation modal
+
     if (dinnerDays.has(dateKey)) {
       setDayToRemove(dateKey);
       setShowConfirmModal(true);
     } else {
-      // If not marked, add it directly
       const newDinnerDays = new Set(dinnerDays);
       newDinnerDays.add(dateKey);
       setDinnerDays(newDinnerDays);
@@ -108,7 +107,7 @@ const DinnerTrackerCalendar = () => {
   const getDinnerCount = () => {
     const currentYear = currentMonth.getFullYear();
     const currentMonthNum = currentMonth.getMonth() + 1;
-    
+
     return Array.from(dinnerDays).filter(dateKey => {
       const [year, month] = dateKey.split('-');
       return parseInt(year) === currentYear && parseInt(month) === currentMonthNum;
@@ -116,6 +115,11 @@ const DinnerTrackerCalendar = () => {
   };
 
   const days = getDaysInMonth(currentMonth);
+
+  // ✅ Save dinnerDays to localStorage on change
+  useEffect(() => {
+    localStorage.setItem("dinnerDays", JSON.stringify([...dinnerDays]));
+  }, [dinnerDays]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 p-4">
@@ -126,7 +130,7 @@ const DinnerTrackerCalendar = () => {
             <Utensils className="w-8 h-8 mr-3" />
             <h1 className="text-2xl font-bold">Dinner Tracker</h1>
           </div>
-          
+
           {/* Month Navigation */}
           <div className="flex items-center justify-between">
             <button
@@ -135,7 +139,7 @@ const DinnerTrackerCalendar = () => {
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
-            
+
             <div className="text-center">
               <h2 className="text-xl font-semibold">
                 {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
@@ -144,7 +148,7 @@ const DinnerTrackerCalendar = () => {
                 {getDinnerCount()} dinners this month
               </p>
             </div>
-            
+
             <button
               onClick={() => navigateMonth(1)}
               className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
@@ -156,7 +160,6 @@ const DinnerTrackerCalendar = () => {
 
         {/* Calendar */}
         <div className="p-6">
-          {/* Week Days Header */}
           <div className="grid grid-cols-7 gap-2 mb-4">
             {weekDays.map(day => (
               <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
@@ -165,7 +168,6 @@ const DinnerTrackerCalendar = () => {
             ))}
           </div>
 
-          {/* Calendar Days */}
           <div className="grid grid-cols-7 gap-2">
             {days.map((day, index) => (
               <button
@@ -174,8 +176,8 @@ const DinnerTrackerCalendar = () => {
                 disabled={!day}
                 className={`
                   aspect-square rounded-xl text-sm font-medium transition-all duration-200 transform hover:scale-105
-                  ${!day 
-                    ? 'invisible' 
+                  ${!day
+                    ? 'invisible'
                     : isDinnerDay(day)
                       ? 'bg-gradient-to-br from-green-400 to-green-500 text-white shadow-lg shadow-green-200'
                       : isToday(day)
@@ -216,9 +218,8 @@ const DinnerTrackerCalendar = () => {
             </div>
           </div>
 
-          {/* Quick Stats */}
+          {/* Stats and Tips */}
           <div className="mt-6 space-y-4">
-            {/* Monthly Summary Card */}
             <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-100">
               <div className="flex items-center justify-between">
                 <div>
@@ -234,7 +235,6 @@ const DinnerTrackerCalendar = () => {
               </div>
             </div>
 
-            {/* Instructions */}
             <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl">
               <div className="flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-orange-500 mr-2" />
